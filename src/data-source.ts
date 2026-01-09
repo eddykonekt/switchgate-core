@@ -1,5 +1,9 @@
 import { DataSource } from 'typeorm';
 import { User } from './users/entities/user.entity';
+import { TokenBlacklist } from './auth/entities/token-blacklist.entity';
+import { AuthAudit } from './auth/entities/auth-audit.entity';
+import { Client } from './auth/entities/client.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -8,7 +12,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'switchgate_user',
   password: process.env.DB_PASSWORD || 'test1234',
   database: process.env.DB_NAME || 'switchgate_test',
-  entities: [User],
+  entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit],
   migrations: ['dist/migrations/*.js'], // compiled migrations
   synchronize: false, // turn off in prod
 });

@@ -8,6 +8,9 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
+  findAdminByEmail: any;
+  findByMsisdn: any;
+  findClientById: any;
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,

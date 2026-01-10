@@ -8,10 +8,13 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { LoggerMiddleware } from './common/logger.middleware';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { RefreshToken } from './users/entities/refresh-token.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 import { TokenBlacklist } from './auth/entities/token-blacklist.entity';
 import { Client } from './auth/entities/client.entity';
 import { AuthAudit } from './auth/entities/auth-audit.entity';
+import { OtpCode } from './auth/entities/otp-code.entity';
+import { PasswordResetToken } from './auth/entities/password-reset-token.entity';
+import { AdminMfaSecret } from './auth/entities/admin-mfa-secret.entity';
 
 @Module({
   imports: [
@@ -44,7 +47,7 @@ import { AuthAudit } from './auth/entities/auth-audit.entity';
           password: process.env.DB_PASSWORD || 'test1234',
           database: process.env.DB_NAME || 'switchgate_test',
           ssl: process.env.DB_SSL === 'true',
-          entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit],
+          entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit, OtpCode, PasswordResetToken, AdminMfaSecret],
           synchronize: true,
         };
       },

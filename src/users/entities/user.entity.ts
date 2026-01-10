@@ -1,5 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { RefreshToken } from './refresh-token.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
+import { PasswordResetToken } from '../../auth/entities/password-reset-token.entity';
+import { AdminMfaSecret } from '../../auth/entities/admin-mfa-secret.entity';
+import { OtpCode } from '../../auth/entities/otp-code.entity';
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -14,9 +26,39 @@ export class User {
   @Column({ default: 'user' })
   role: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ nullable: true })
+  msisdn?: string;
 
-  @OneToMany(() => RefreshToken, token => token.user)
-refreshTokens: RefreshToken[];
+  @Column({ nullable: true })
+  pin?: string;
+
+  @Column({ nullable: true })
+  clientId?: string;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  // Relations
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+  refreshTokens: RefreshToken[];
+
+  @OneToMany(() => PasswordResetToken, reset => reset.user)
+  passwordResetTokens: PasswordResetToken[];
+
+  @OneToOne(() => AdminMfaSecret, mfa => mfa.admin)
+  mfaSecret: AdminMfaSecret;
+
+  @OneToMany(() => OtpCode, otp => otp.email)
+  otpCodes: OtpCode[];
+  requireOtp: any;
+  secretHash: string;
+  client_id: any;
+  scopes: any;
+    emailVerificationTokens: any;
 }

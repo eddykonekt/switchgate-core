@@ -1,34 +1,31 @@
-import { BadRequestException, Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { MailerService } from '../mailer/mailer.service';
 import * as hbs from 'handlebars';
-import Redis from 'ioredis';
+import { RegisterDto } from './dto/register.dto';
+import { v4 as uuid } from 'uuid';
 import { AdminLoginDto, UserLoginDto, ClientCredentialsDto } from './auth.dto';
+import { AuditService } from './audit.service';
+
+export interface OtpRecord {
+  id: number;
+  email: string;
+  code: string;
+  expiresAt: Date;
+  used: boolean;
+}
 
 @Injectable()
 export class AuthService {
+  requestPasswordRequest: any;
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
-    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+    private readonly auditService: AuditService,
   ) {}
-
-  // ---------------- MFA Secret Management ----------------
-  async saveAdminMfaSecret(adminId: string, secret: string) {
-    await this.redis.set(`admin:mfa:${adminId}`, secret);
-    return { message: 'MFA secret saved successfully' };
-  }
-
-  async getAdminMfaSecret(adminId: string) {
-    const secret = await this.redis.get(`admin:mfa:${adminId}`);
-    if (!secret) {
-      throw new BadRequestException('No MFA secret found');
-    }
-    return { secret };
-  }
 
   // ---------------- User Validation ----------------
   async validateUser(email: string, pass: string): Promise<any> {
@@ -46,43 +43,54 @@ export class AuthService {
     const payload = { email: user.email, sub: user.id };
     return { access_token: this.jwtService.sign(payload) };
   }
-
   // ---------------- Admin Login ----------------
-  async adminLogin(body: AdminLoginDto) {
-    const admin = await this.usersService.findAdminByEmail(body.email);
-    if (!admin) throw new UnauthorizedException('Invalid credentials');
 
-    const match = await bcrypt.compare(body.password, admin.password);
-    if (!match) throw new UnauthorizedException('Invalid credentials');
-
-    // Optional OTP validation
-    if (admin.requireOtp) {
-      const storedOtp = await this.redis.get(`otp:${body.email}`);
-      if (!storedOtp || storedOtp !== body.otp) {
-        throw new UnauthorizedException('Invalid OTP');
-      }
-      await this.redis.del(`otp:${body.email}`);
+    async userLogin(email: string, password: string, pin?: string, otp?: string, deviceFingerprint?: string, req?: any) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: admin.id, role: 'ADMIN', email: admin.email };
-    return { access_token: this.jwtService.sign(payload) };
-  }
-
-  // ---------------- User Login ----------------
-  async userLogin(body: UserLoginDto) {
-    const user = await this.usersService.findByMsisdn(body.msisdn);
-    if (!user) throw new UnauthorizedException('User not found');
-
-    const storedOtp = await this.redis.get(`otp:${user.email}`);
-    if (body.pin !== user.pin || !storedOtp || storedOtp !== body.otp) {
-      throw new UnauthorizedException('Invalid PIN/OTP');
+    // 🚨 Block login if not verified
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Please verify your email before logging in');
     }
-    await this.redis.del(`otp:${user.email}`);
 
-    const payload = { sub: user.id, role: 'USER', msisdn: user.msisdn };
-    return { access_token: this.jwtService.sign(payload) };
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      await this.auditService.record('LOGIN', user.id, 'USER', false, req);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    await this.auditService.record('LOGIN', user.id, 'USER', true, req);
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
+  async adminLogin(email: string, password: string) {
+    const admin = await this.usersService.findByEmail(email);
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 🚨 Block login if not verified
+    if (!admin.isVerified) {
+      throw new UnauthorizedException('Please verify your email before logging in');
+    }
+
+    const passwordMatch = await bcrypt.compare(password, admin.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: admin.id, email: admin.email, role: admin.role };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
   // ---------------- Client Credentials ----------------
   async clientCredentials(body: ClientCredentialsDto, role: 'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT') {
     const client = await this.usersService.findClientById(body.client_id);
@@ -114,6 +122,8 @@ export class AuthService {
       html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`,
     });
 
+    await this.usersService.savePasswordResetToken(user.id, token, new Date(Date.now() + 15 * 60 * 1000));
+
     return { message: 'Password reset link sent', token };
   }
 
@@ -137,6 +147,10 @@ export class AuthService {
   // ---------------- OTP ----------------
   async sendOtp(email: string) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.usersService.saveOtpToDb(email, otp, expiresAt);
+
     const html = hbs.compile(`<p>Your OTP is <b>{{otp}}</b>. It expires in 5 minutes.</p>`)({ otp });
 
     await this.mailerService.sendMail({
@@ -146,21 +160,109 @@ export class AuthService {
       html,
     });
 
-    await this.redis.set(`otp:${email}`, otp, 'EX', 300);
     return { message: 'OTP sent to email' };
   }
 
   async verifyOtp(email: string, otp: string) {
-    const stored = await this.redis.get(`otp:${email}`);
-    if (!stored) {
+    const record = await this.usersService.findOtp(email, otp);
+    if (!record) {
       return { success: false, message: 'No OTP found or expired' };
     }
 
-    if (stored !== otp) {
-      return { success: false, message: 'Invalid OTP' };
+    if (record.expiresAt < new Date()) {
+      return { success: false, message: 'OTP has expired' };
     }
 
-    await this.redis.del(`otp:${email}`);
+    if (record.used) {
+      return { success: false, message: 'OTP already used' };
+    }
+
+    await this.usersService.markOtpUsed(record.id);
     return { success: true, message: 'OTP verified successfully' };
+  }
+
+  // ---------------- Admin MFA ----------------
+  async saveAdminMfaSecret(adminId: string, secret: string) {
+    await this.usersService.saveMfaSecret(adminId, secret);
+    return { message: 'MFA secret saved successfully' };
+  }
+
+  async getAdminMfaSecret(adminId: string) {
+    const secret = await this.usersService.getMfaSecret(adminId);
+    if (!secret) throw new BadRequestException('No MFA secret found');
+    return { secret };
+  }
+
+  async register(dto: RegisterDto) {
+    const user = await this.usersService.create(dto);
+
+    if (['PARTNER', 'ENTERPRISE', 'GOVERNMENT'].includes(dto.role)) {
+      // generate client credentials
+      const clientId = uuid();
+      const clientSecret = uuid();
+      const secretHash = await bcrypt.hash(clientSecret, 10);
+
+      await this.usersService.saveClientCredentials(user.id, clientId, secretHash);
+
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Your Client Credentials',
+        text: `Client ID: ${clientId}\nClient Secret: ${clientSecret}\nKeep these safe.`,
+        html: `<p>Your client credentials:</p><ul><li>Client ID: ${clientId}</li><li>Client Secret: ${clientSecret}</li></ul><p>Keep these safe.</p>`,
+      });
+
+      return { message: 'Client registered successfully. Credentials sent to email.' };
+    }
+
+    if (dto.role === 'USER') {
+      // send signup confirmation
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Welcome to Switchgate',
+        text: 'Your registration was successful!',
+        html: '<p>Your registration was successful!</p>',
+      });
+
+      // generate verification token
+      const token = this.jwtService.sign(
+        { sub: user.id },
+        { secret: process.env.EMAIL_VERIFY_SECRET || 'verify_secret', expiresIn: '24h' },
+      );
+
+      await this.usersService.saveEmailVerificationToken(user.id, token, new Date(Date.now() + 24 * 60 * 60 * 1000));
+
+      const verificationLink = `https://switchgate.com/verify-email?token=${token}`;
+
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Verify Your Email',
+        text: `Click the link to verify your email: ${verificationLink}`,
+        html: `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`,
+      });
+
+      return { message: 'User registered successfully. Verification email sent.' };
+    }
+  }
+
+  async verifyEmail(token: string, req?: any) {
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.EMAIL_VERIFY_SECRET || 'verify_secret',
+      });
+
+      const record = await this.usersService.findEmailVerificationToken(payload.sub, token);
+      if (!record || record.expiresAt < new Date() || record.used) {
+        await this.auditService.record('EMAIL_VERIFIED', payload.sub, 'USER', false, req);
+        throw new BadRequestException('Invalid or expired token');
+      }
+
+      await this.usersService.markEmailVerified(payload.sub);
+      await this.usersService.markEmailVerificationTokenUsed(record.id);
+
+      await this.auditService.record('EMAIL_VERIFIED', payload.sub, 'USER', true, req);
+      return { message: 'Email verified successfully' };
+    } catch {
+      throw new BadRequestException('Invalid or expired token');
+    }
   }
 }

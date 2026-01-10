@@ -11,6 +11,7 @@ export class UserLoginDto {
   @ApiProperty() pin: string;
   @ApiProperty() otp: string;
   @ApiProperty() deviceFingerprint: string;
+  email: string;
 }
 
 export class ClientCredentialsDto {
@@ -57,4 +58,17 @@ export class MfaSetupDto {
 
 export class MfaVerifyDto {
   @ApiProperty() code: string;
+}
+
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'user@switchgate.com' })
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'jwt-reset-token' })
+  token: string;
+
+  @ApiProperty({ example: 'newSecurePassword123!' })
+  newPassword: string;
 }

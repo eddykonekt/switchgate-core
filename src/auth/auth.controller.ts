@@ -1,7 +1,9 @@
-import { Controller, Post, Body, UnauthorizedException, Req } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, Req, Query, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
+import { Throttle } from '@nestjs/throttler';
+import { VerifyEmailDto } from './dto/register.dto';
 import { MFAService } from './mfa.service';
 import { AuditService } from './audit.service';
 import { AccountService } from './account.service';
@@ -17,6 +19,7 @@ import {
   ChangePasswordDto,
   MfaVerifyDto,
 } from './auth.dto';
+import { Public } from './decorators/public.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -47,7 +50,7 @@ export class AuthController {
   @ApiBody({ type: AdminLoginDto })
   @ApiResponse({ status: 200, description: 'Admin logged in', type: TokenResponseDto })
   async adminLogin(@Body() body: AdminLoginDto) {
-    return this.authService.adminLogin(body);
+    return this.authService.adminLogin(body.email, body.password);
   }
 
   @Post('user/login')
@@ -55,7 +58,7 @@ export class AuthController {
   @ApiBody({ type: UserLoginDto })
   @ApiResponse({ status: 200, description: 'User logged in', type: TokenResponseDto })
   async userLogin(@Body() body: UserLoginDto) {
-    return this.authService.userLogin(body);
+    return this.authService.userLogin(body.email, body.msisdn, body.pin, body.otp, body.deviceFingerprint);
   }
 
   // ---------------- Client Credentials ----------------
@@ -127,10 +130,13 @@ export class AuthController {
   }
 
   // ---------------- Account Management ----------------
+  @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register account' })
+  @ApiOperation({ summary: 'Register a new user or client (Partner, Enterprise, Government)' })
   @ApiBody({ type: RegisterDto })
-  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 201, description: 'Registration successful. Email sent with credentials or verification link.' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 429, description: 'Too many requests (rate limit exceeded)' })
   async register(@Body() dto: RegisterDto) {
     return this.accountService.register(dto.email, dto.password, dto.msisdn);
   }
@@ -181,5 +187,29 @@ export class AuthController {
   @ApiResponse({ status: 200 })
   async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
     return this.authService.verifyOtp(email, otp);
+  }
+
+  @Post('request-password-reset')
+  @ApiOperation({ summary: 'Request a password reset link'})
+  async requestPasswordReset(@Body('email') email: string) {
+    return this.authService.requestPasswordRequest(email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password using token'})
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.authService.resetPassword(token, newPassword);
+  }
+
+  @Public()
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify user email with token'})
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Query() query: VerifyEmailDto) {
+    return this.authService.verifyEmail(query.token);
   }
 }

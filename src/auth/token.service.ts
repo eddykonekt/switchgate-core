@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { RefreshToken } from './entities/refresh-token.entity';
+import { RefreshToken } from '../users/entities/refresh-token.entity';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 
 @Injectable()

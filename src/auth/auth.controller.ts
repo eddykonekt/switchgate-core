@@ -29,6 +29,7 @@ export class AuthController {
     private readonly accountService: AccountService,
   ) {}
 
+  // ---------------- Basic Login ----------------
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiBody({ type: AdminLoginDto })
@@ -40,6 +41,7 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  // ---------------- Admin/User Login ----------------
   @Post('admin/login')
   @ApiOperation({ summary: 'Admin login with email/password/OTP' })
   @ApiBody({ type: AdminLoginDto })
@@ -56,6 +58,7 @@ export class AuthController {
     return this.authService.userLogin(body);
   }
 
+  // ---------------- Client Credentials ----------------
   @Post('partner/token')
   @ApiOperation({ summary: 'Partner OAuth2 client credentials' })
   @ApiBody({ type: ClientCredentialsDto })
@@ -80,6 +83,7 @@ export class AuthController {
     return this.authService.clientCredentials(body, 'GOVERNMENT');
   }
 
+  // ---------------- Token Management ----------------
   @Post('token/refresh')
   @ApiOperation({ summary: 'Rotate refresh token and issue new access token' })
   @ApiBody({ type: RefreshTokenDto })
@@ -102,6 +106,7 @@ export class AuthController {
     return { message: 'Logged out' };
   }
 
+  // ---------------- Admin MFA ----------------
   @Post('admin/mfa/setup')
   @ApiOperation({ summary: 'Setup MFA for admin (TOTP)' })
   @ApiResponse({ status: 200 })
@@ -116,11 +121,12 @@ export class AuthController {
   @ApiBody({ type: MfaVerifyDto })
   @ApiResponse({ status: 200 })
   async adminMfaVerify(@Body() dto: MfaVerifyDto, @Req() req) {
-    const secret = await this.authService.getAdminMfaSecret(req.user.sub);
+    const { secret } = await this.authService.getAdminMfaSecret(req.user.sub);
     this.mfaService.verifyTotp(secret, dto.code);
     return { message: 'MFA verified' };
   }
 
+  // ---------------- Account Management ----------------
   @Post('register')
   @ApiOperation({ summary: 'Register account' })
   @ApiBody({ type: RegisterDto })
@@ -143,5 +149,37 @@ export class AuthController {
   @ApiResponse({ status: 200 })
   async changePassword(@Body() dto: ChangePasswordDto, @Req() req) {
     return this.accountService.changePassword(req.user.sub, dto.currentPassword, dto.newPassword);
+  }
+
+  // ---------------- OTP ----------------
+  @Post('send-otp')
+  @ApiOperation({ summary: 'Send OTP to user email or MSISDN' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'user@switchgate.com' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200 })
+  async sendOtp(@Body('email') email: string) {
+    return this.authService.sendOtp(email);
+  }
+
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'Verify OTP submitted by user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'user@switchgate.com' },
+        otp: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200 })
+  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
+    return this.authService.verifyOtp(email, otp);
   }
 }

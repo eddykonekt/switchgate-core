@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import { RefreshToken } from './refresh-token.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -17,6 +17,6 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => RefreshToken, rt => rt.user)
-  refreshTokens: RefreshToken[];
+  @OneToMany(() => RefreshToken, token => token.user)
+refreshTokens: RefreshToken[];
 }

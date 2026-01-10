@@ -8,6 +8,10 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { LoggerMiddleware } from './common/logger.middleware';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { RefreshToken } from './users/entities/refresh-token.entity';
+import { TokenBlacklist } from './auth/entities/token-blacklist.entity';
+import { Client } from './auth/entities/client.entity';
+import { AuthAudit } from './auth/entities/auth-audit.entity';
 
 @Module({
   imports: [
@@ -40,7 +44,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
           password: process.env.DB_PASSWORD || 'test1234',
           database: process.env.DB_NAME || 'switchgate_test',
           ssl: process.env.DB_SSL === 'true',
-          entities: [User],
+          entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit],
           synchronize: true,
         };
       },

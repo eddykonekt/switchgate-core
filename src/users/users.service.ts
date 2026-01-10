@@ -11,6 +11,7 @@ export class UsersService {
   findAdminByEmail: any;
   findByMsisdn: any;
   findClientById: any;
+  saveOtp: any;
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,

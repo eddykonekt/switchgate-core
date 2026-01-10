@@ -13,7 +13,8 @@ import { ClientRegistryService } from './client-registry.service';
 import { MailerModule } from '../mailer/mailer.module';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshToken } from './entities/refresh-token.entity';
+import { RedisModule } from '../redis/redis.module';
+import { RefreshToken } from '../users/entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
       signOptions: { issuer: 'switchgate', expiresIn: '15m' },
     }),
     MailerModule,
+    RedisModule,
   ],
   providers: [AuthService, JwtStrategy, TokenService, MFAService, AuditService, AccountService, ClientRegistryService, RefreshTokenRepository],
   controllers: [AuthController],

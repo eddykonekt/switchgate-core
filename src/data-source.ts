@@ -3,7 +3,7 @@ import { User } from './users/entities/user.entity';
 import { TokenBlacklist } from './auth/entities/token-blacklist.entity';
 import { AuthAudit } from './auth/entities/auth-audit.entity';
 import { Client } from './auth/entities/client.entity';
-import { RefreshToken } from './auth/entities/refresh-token.entity';
+import { RefreshToken } from './users/entities/refresh-token.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

@@ -1,17 +1,21 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { RegisterDto } from './dto/register.dto';
+import { AppMailer as mailer } from '../mailer/mailer.service';
 
 @Injectable()
 export class AccountService {
   userRepo: any;
-  async register(email: string, password: string, msisdn?: string) {
+  async register(dto: RegisterDto,email: string, password: string, msisdn?: string) {
     const exists = await findUserByEmail(email);
     if (exists) throw new BadRequestException('Email already registered');
     const hash = await bcrypt.hash(password, 12);
     const user = await createUser({ email, passwordHash: hash, msisdn, status: 'PENDING' });
     const token = await createActivationToken(user.id);
     // send activation email
-    return { message: 'Registered. Check email to activate.' };
+    const verifyUrl = '${process.env.APP_URL}/verify/${user.verificationToken}';
+    await mailer.sendWelcomeEmail(user.name, user.email, verifyUrl);
+    return user;
   }
 
   async activate(token: string) {

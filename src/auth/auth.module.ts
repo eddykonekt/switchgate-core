@@ -15,6 +15,7 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../redis/redis.module';
 import { OtpCode } from './entities/otp-code.entity';
+import { ClientEntity } from './entities/client.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { AdminMfaSecret } from './entities/admin-mfa-secret.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -23,7 +24,7 @@ import { User } from 'src/users/entities/user.entity';
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken]),
+    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken, ClientEntity]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev_secret',

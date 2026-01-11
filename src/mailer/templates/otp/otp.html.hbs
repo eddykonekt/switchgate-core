@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your One Time Password (OTP)</title>
+  <style>
+    body { font-family: 'Open Sans', Arial, sans-serif; background: #f9fafb; margin: 0; padding: 0; }
+    .container { max-width: 640px; margin: 0 auto; background: #ffffff; padding: 24px; }
+    .brand { font-weight: 700; color: #01796F; }
+    .otp-box { background: #e6f2f0; border: 1px solid #01796F; border-radius: 8px; padding: 16px; text-align: center; }
+    .otp { font-size: 28px; font-weight: 700; letter-spacing: 2px; color: #01796F; }
+    .warning { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 12px; border-radius: 6px; margin-top: 12px; }
+    .footer { font-size: 12px; color: #6b7280; margin-top: 24px; }
+    a { color: #01796F; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">Switchgate</div>
+
+    <h2>Dear {{userName}},</h2>
+
+    <p>Please use the following One Time Password (OTP):</p>
+    <div class="otp-box">
+      <div class="otp">{{otp}}</div>
+    </div>
+    <p>This OTP will expire after <strong>10 minutes</strong>.</p>
+
+    <div class="warning">
+      Do not share this OTP with anyone. If you did not initiate this action, please reset your password immediately or contact our customer support at
+      <a href="mailto:support@switchgate.com">support@switchgate.com</a> or <a href="tel:09031682798">09031682798</a>.
+    </div>
+
+    <p>Kind Regards,<br />Switchgate Team</p>
+
+    <div class="footer">
+      You received this email because a security action was requested for your account.
+    </div>
+  </div>
+</body>
+</html>

@@ -61,4 +61,5 @@ export class User {
   client_id: any;
   scopes: any;
     emailVerificationTokens: any;
+  name: string;
 }

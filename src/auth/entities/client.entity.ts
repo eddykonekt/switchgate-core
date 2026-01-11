@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('clients')
-export class Client {
+export class ClientEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -12,7 +12,7 @@ export class Client {
   partnerId: string;
 
   @Column({ type: 'varchar' })
-  role: 'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT';
+  role: string; //'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT';
 
   @Column({ nullable: true })
   division: string;
@@ -25,6 +25,9 @@ export class Client {
 
   @Column({ default: true })
   enabled: boolean;
+
+  @Column()
+  apiKey: string;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -12,6 +12,7 @@ export class UserLoginDto {
   @ApiProperty() otp: string;
   @ApiProperty() deviceFingerprint: string;
   email: string;
+  password: string;
 }
 
 export class ClientCredentialsDto {

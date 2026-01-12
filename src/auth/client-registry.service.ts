@@ -1,19 +1,22 @@
 import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { randomBytes } from 'crypto';
 import { ClientRegisterDto } from '../client/dto/client-register.dto';
 import { AppMailer } from '../mailer/mailer.service';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientEntity } from '../auth/entities/client.entity'; // adjust to your actual entity
+import { Client } from '../auth/entities/client.entity'; // adjust to your actual entity
 
 type Role = 'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT';
 
 @Injectable()
 export class ClientRegistryService {
+  approveClient: any;
+    rotateApiKey: any;
   constructor(
-    @InjectRepository(ClientEntity)
-    private readonly clientRepo: Repository<ClientEntity>,
+    @InjectRepository(Client)
+    private readonly clientRepo: Repository<Client>,
     private readonly mailer: AppMailer,
   ) {}
 

@@ -19,6 +19,8 @@ export interface OtpRecord {
 
 @Injectable()
 export class AuthService {
+  getAdminMfaSecret: any;
+  saveAdminMfaSecret: any;
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,

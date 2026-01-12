@@ -15,7 +15,10 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../redis/redis.module';
 import { OtpCode } from './entities/otp-code.entity';
-import { ClientEntity } from './entities/client.entity';
+import { Client } from './entities/client.entity';
+import { AdminUsersService } from './admin-users.service';
+import { AdminUsersController } from './admin-users.controller';
+import { AdminClientsController } from './admin-clients.controller';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { AdminMfaSecret } from './entities/admin-mfa-secret.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -24,7 +27,7 @@ import { User } from 'src/users/entities/user.entity';
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken, ClientEntity]),
+    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken, Client]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev_secret',
@@ -33,8 +36,8 @@ import { User } from 'src/users/entities/user.entity';
     MailerModule,
     RedisModule,
   ],
-  providers: [AuthService, JwtStrategy, TokenService, MFAService, AuditService, AccountService, ClientRegistryService, RefreshTokenRepository],
-  controllers: [AuthController],
-  exports: [AuthService, TokenService, RefreshTokenRepository],
+  providers: [AuthService, JwtStrategy, TokenService, MFAService, AuditService, AccountService, ClientRegistryService, RefreshTokenRepository, AdminUsersService],
+  controllers: [AuthController, AdminClientsController, AdminUsersController],
+  exports: [AuthService, TokenService, RefreshTokenRepository, ClientRegistryService],
 })
 export class AuthModule {}

@@ -29,9 +29,10 @@ export class AppMailer {
     });
   }
 
-  async sendWelcomeEmail(userName: string, email: string, verifyUrl: string) {
-    const html = this.compileTemplate('welcome/welcome.html.hbs', { userName, verifyUrl });
-    const text = this.compileTemplate('welcome/welcome.txt.hbs', { userName, verifyUrl });
+  async sendWelcomeEmail(userName: string, email: string, verifyToken: string) {
+    // ✅ updated to use verifyToken instead of verifyUrl
+    const html = this.compileTemplate('welcome/welcome.html.hbs', { userName, verifyToken });
+    const text = this.compileTemplate('welcome/welcome.txt.hbs', { userName, verifyToken });
 
     await this.mailer.sendMail({
       to: email,
@@ -72,5 +73,3 @@ export class AppMailer {
     });
   }
 }
-
-export { MailerService };

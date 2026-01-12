@@ -1,75 +1,52 @@
-// src/mailer/mailer.service.ts
 import { Injectable } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as Handlebars from 'handlebars';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class AppMailer {
-  static sendWelcomeEmail: any;
-  constructor(private readonly mailer: MailerService) {}
+  private transporter;
 
-  // Utility: compile a Handlebars template file
-  private compileTemplate(templatePath: string, context: any): string {
-    const file = fs.readFileSync(path.join(__dirname, 'templates', templatePath), 'utf8');
-    const template = Handlebars.compile(file);
-    return template(context);
-  }
-
-  async sendOtpEmail(userName: string, email: string, otp: string) {
-    const html = this.compileTemplate('otp/otp.html.hbs', { userName, otp });
-    const text = this.compileTemplate('otp/otp.txt.hbs', { userName, otp });
-
-    await this.mailer.sendMail({
-      to: email,
-      subject: 'Your One Time Password (OTP)',
-      html,
-      text,
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
     });
   }
 
-  async sendWelcomeEmail(userName: string, email: string, verifyToken: string) {
-    // ✅ updated to use verifyToken instead of verifyUrl
-    const html = this.compileTemplate('welcome/welcome.html.hbs', { userName, verifyToken });
-    const text = this.compileTemplate('welcome/welcome.txt.hbs', { userName, verifyToken });
-
-    await this.mailer.sendMail({
+  async sendWelcomeEmail(email: string, link: string) {
+    await this.transporter.sendMail({
+      from: '"Switchgate" <no-reply@switchgate.com>',
       to: email,
       subject: 'Welcome to Switchgate',
-      html,
-      text,
+      html: `<p>Welcome! Please verify your account:</p><p><a href="${link}">${link}</a></p>`,
     });
   }
 
-  async sendClientWelcomeEmail(
-    clientName: string,
-    email: string,
-    clientId: string,
-    clientSecret: string,
-    apiKey: string,
-    clientType: string,
-  ) {
-    const html = this.compileTemplate('client/client.html.hbs', {
-      clientName,
-      clientId,
-      clientSecret,
-      apiKey,
-      clientType,
-    });
-    const text = this.compileTemplate('client/client.txt.hbs', {
-      clientName,
-      clientId,
-      clientSecret,
-      apiKey,
-      clientType,
-    });
-
-    await this.mailer.sendMail({
+  async sendOtpEmail(email: string, otp: string) {
+    await this.transporter.sendMail({
+      from: '"Switchgate" <no-reply@switchgate.com>',
       to: email,
-      subject: `Welcome to Switchgate (${clientType} Credentials)`,
-      html,
-      text,
+      subject: 'Your OTP Code',
+      html: `<p>Your OTP code is <b>${otp}</b>. It expires in 5 minutes.</p>`,
+    });
+  }
+
+  async sendClientWelcomeEmail(email: string, clientId: string, clientSecret: string, apiKey: string, role: string) {
+    await this.transporter.sendMail({
+      from: '"Switchgate" <no-reply@switchgate.com>',
+      to: email,
+      subject: 'Your Client Credentials',
+      html: `
+        <p>Hello,</p>
+        <p>Your ${role} client has been registered successfully.</p>
+        <p><b>Client ID:</b> ${clientId}</p>
+        <p><b>Client Secret:</b> ${clientSecret}</p>
+        <p><b>API Key:</b> ${apiKey}</p>
+      `,
     });
   }
 }

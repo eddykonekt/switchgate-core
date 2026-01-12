@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import { PasswordResetToken } from '../../auth/entities/password-reset-token.entity';
+import { EmailVerificationToken } from '../../auth/entities/email-verification-token.entity';
 
 @Entity('users')
 export class User {
@@ -41,4 +43,13 @@ export class User {
 
   @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
   refreshTokens: RefreshToken[];
+
+  @OneToMany(() => PasswordResetToken, token => token.user)
+  passwordResetTokens: PasswordResetToken[] ;
+
+  @OneToMany(() => EmailVerificationToken, token => token.user)
+  emailVerificationTokens: EmailVerificationToken[];
+  
+  name: string;
+  clientSecretHash: string;
 }

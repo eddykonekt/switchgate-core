@@ -51,7 +51,6 @@ export class ClientRegistryService {
       clientId,
       clientSecret,
       apiKey,
-      dto.clientType,
     );
 
     return { ...client, clientId, clientSecret, apiKey };

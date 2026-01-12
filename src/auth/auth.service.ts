@@ -1,31 +1,25 @@
-// src/auth/auth.service.ts
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
-import { AppMailer } from '../mailer/mailer.service';   // ✅ use AppMailer
+import { AppMailer } from '../mailer/mailer.service';
 import { RegisterDto } from './dto/register.dto';
 import { v4 as uuid } from 'uuid';
 import { ClientCredentialsDto } from './auth.dto';
 import { AuditService } from './audit.service';
-
-export interface OtpRecord {
-  id: number;
-  email: string;
-  code: string;
-  expiresAt: Date;
-  used: boolean;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Client } from '../auth/entities/client.entity';
 
 @Injectable()
 export class AuthService {
-  getAdminMfaSecret: any;
-  saveAdminMfaSecret: any;
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly mailer: AppMailer,   // ✅ inject AppMailer
+    private readonly mailer: AppMailer,
     private readonly auditService: AuditService,
+    @InjectRepository(Client)
+    private readonly clientRepo: Repository<Client>,
   ) {}
 
   // ---------------- User Validation ----------------
@@ -49,7 +43,6 @@ export class AuthService {
   async userLogin(email: string, password: string, req?: any) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
-
     if (!user.isVerified) throw new UnauthorizedException('Please verify your email before logging in');
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -79,13 +72,13 @@ export class AuthService {
 
   // ---------------- Client Credentials ----------------
   async clientCredentials(body: ClientCredentialsDto, role: 'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT') {
-    const client = await this.usersService.findClientById(body.client_id);
+    const client = await this.clientRepo.findOne({ where: { clientId: body.client_id } });
     if (!client || client.role !== role) throw new UnauthorizedException('Invalid client');
 
-    const match = await bcrypt.compare(body.client_secret, client.secretHash);
+    const match = await bcrypt.compare(body.client_secret, client.clientSecretHash);
     if (!match) throw new UnauthorizedException('Invalid secret');
 
-    const payload = { sub: client.id, role, clientId: client.client_id, scopes: client.scopes };
+    const payload = { sub: client.id, role, clientId: client.clientId, scopes: client.scopes };
     return { access_token: this.jwtService.sign(payload) };
   }
 
@@ -101,8 +94,7 @@ export class AuthService {
 
     const resetLink = `https://switchgate.com/reset?token=${token}`;
 
-    // ✅ use AppMailer directly (or keep inline for reset)
-    await this.mailer.sendWelcomeEmail(user.name, user.email, resetLink);
+    await this.mailer.sendWelcomeEmail(user.email, resetLink); // ✅ no user.name
 
     await this.usersService.savePasswordResetToken(user.id, token, new Date(Date.now() + 15 * 60 * 1000));
 
@@ -132,9 +124,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await this.usersService.saveOtpToDb(email, otp, expiresAt);
-
-    // ✅ use AppMailer OTP template
-    await this.mailer.sendOtpEmail(email, email, otp);
+    await this.mailer.sendOtpEmail(email, otp);
 
     return { message: 'OTP sent to email' };
   }
@@ -158,15 +148,21 @@ export class AuthService {
       const clientSecret = uuid();
       const secretHash = await bcrypt.hash(clientSecret, 10);
 
-      await this.usersService.saveClientCredentials(user.id, clientId, secretHash);
+      const client = this.clientRepo.create({
+        clientId,
+        partnerId: user.id,
+        role: dto.role,
+        clientSecretHash: secretHash,
+        scopes: [],
+        enabled: true,
+      });
+      await this.clientRepo.save(client);
 
-      // ✅ use AppMailer Client Welcome template
       await this.mailer.sendClientWelcomeEmail(
-        user.name,
         user.email,
         clientId,
         clientSecret,
-        'API-' + uuid(), // generate API key
+        client.apiKey,
         dto.role,
       );
 
@@ -174,7 +170,6 @@ export class AuthService {
     }
 
     if (dto.role === 'USER') {
-      // ✅ use AppMailer Welcome template
       const verifyToken = this.jwtService.sign(
         { sub: user.id },
         { secret: process.env.EMAIL_VERIFY_SECRET || 'verify_secret', expiresIn: '24h' },
@@ -183,8 +178,7 @@ export class AuthService {
       await this.usersService.saveEmailVerificationToken(user.id, verifyToken, new Date(Date.now() + 24 * 60 * 60 * 1000));
 
       const verificationLink = `https://switchgate.com/verify-email?token=${verifyToken}`;
-
-      await this.mailer.sendWelcomeEmail(user.name, user.email, verificationLink);
+      await this.mailer.sendWelcomeEmail(user.email, verificationLink);
 
       return { message: 'User registered successfully. Verification email sent.' };
     }
@@ -210,5 +204,15 @@ export class AuthService {
     } catch {
       throw new BadRequestException('Invalid or expired token');
     }
+  }
+
+  async saveAdminMfaSecret(userId: string, secret: string) {
+    // TODO: Persist MFA secret in DB
+    return {success: true};
+  }
+
+  async getAdminMfaSecret(userId: string) {
+    // TODO; fetch MFA secret from DB
+    return {secret: 'dummy-secret'};
   }
 }

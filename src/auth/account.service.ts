@@ -6,6 +6,7 @@ import { AppMailer as mailer } from '../mailer/mailer.service';
 @Injectable()
 export class AccountService {
   userRepo: any;
+  mailer: any;
   async register(dto: RegisterDto,email: string, password: string, msisdn?: string) {
     const exists = await findUserByEmail(email);
     if (exists) throw new BadRequestException('Email already registered');
@@ -14,7 +15,7 @@ export class AccountService {
     const token = await createActivationToken(user.id);
     // send activation email
     const verifyUrl = '${process.env.APP_URL}/verify/${user.verificationToken}';
-    await mailer.sendWelcomeEmail(user.name, user.email, verifyUrl);
+    await this.mailer.sendWelcomeEmail(user.name, user.email, verifyUrl);
     return user;
   }
 

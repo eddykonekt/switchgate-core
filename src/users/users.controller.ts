@@ -5,7 +5,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../common/roles.decorator'; 
 import { RolesGuard } from '../common/roles.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { id } from 'zod/v4/locales/index.js';
 
 @ApiTags('users')
 @Controller('users')
@@ -22,18 +23,24 @@ export class UsersController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Get()
-  @ApiOperation({ summary: 'Get all users (paginated)' })
+  @Roles('admin', 'sub-admin')
+  @ApiOperation({ summary: 'Get paginated list of users (Admin/Sub-admin only)' })
   @ApiResponse({ status: 200, description: 'List of users returned' })
-  findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
-    return this.usersService.findAll({ page: Number(page), limit: Number(limit) });
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1})
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10})
+  async getUsers(@Query('page') page = 1, @Query('limit') limit = 10) {
+    const [data, total] = await this.usersService.findAll({ page, limit });
+    return { data, total };
   }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Get(':id')
-  @ApiOperation({ summary: 'Get a user by ID' })
+  @Roles('admin', 'sub-admin')
+  @ApiOperation({ summary: 'Get a user by ID (Admin/Sub-admin only)' })
   @ApiResponse({ status: 200, description: 'User returned successfully' })
-  findOne(@Param('id') id: string) {
+  @ApiParam({ name: 'id', type: String })
+  async getUser(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 

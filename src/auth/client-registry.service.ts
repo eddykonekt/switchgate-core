@@ -101,4 +101,16 @@ export class ClientRegistryService {
   private cryptoRandom(len: number): string {
     return crypto.randomBytes(len).toString('hex');
   }
+
+  async findAllPaginated(page: number = 1, limit: number = 10) {
+    return this.clientRepo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOne(id: string) {
+    return this.clientRepo.findOne({ where: { id } });
+  }
 }

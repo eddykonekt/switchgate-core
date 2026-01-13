@@ -1,9 +1,10 @@
 import { Controller, Param, Patch, Delete, Post, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AdminUsersService } from './admin-users.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../users/entities/user.entity';
+import { CreateSubAdminDto } from './dto/create-subadmin.dto';
 
 @ApiTags('Admin Users')
 @ApiBearerAuth()
@@ -43,7 +44,8 @@ export class AdminUsersController {
   @Post('sub-admin')
   @ApiOperation({ summary: 'Create a sub-admin (unit head)' })
   @ApiResponse({ status: 201, description: 'Sub-admin created successfully', type: User })
-  async createSubAdmin(@Body() dto: Partial<User>) {
+  @ApiBody({ type: CreateSubAdminDto})
+  async createSubAdmin(@Body() dto: CreateSubAdminDto) {
     return this.adminUsersService.createSubAdmin(dto);
   }
 }

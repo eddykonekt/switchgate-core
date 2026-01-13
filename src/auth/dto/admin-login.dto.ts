@@ -1,5 +1,18 @@
+import { ApiProperty } from '@nestjs/swagger/dist/decorators/api-property.decorator';
+import { IsEmail, IsString, IsOptional } from 'class-validator';
+
 export class AdminLoginDto {
-  email: string;        // required
-  password: string;     // required
-  otp?: string;         // optional (only if admin requires OTP)
+  @ApiProperty({ example: 'admin@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'strongpassword123' })
+  @IsString()
+  password: string;
+
+
+  @ApiProperty({ example: '123456', required: false })
+  @IsOptional()
+  @IsString()
+  otp?: string;
 }

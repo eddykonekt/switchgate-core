@@ -6,21 +6,18 @@ export class PasswordResetToken {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'uuid' })
-  userId: string;
-
-  @Column('text')
+  @Column()
   token: string;
 
-  @Column({ type: 'timestamp' })
+  @Column()
   expiresAt: Date;
 
   @Column({ default: false })
   used: boolean;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @ManyToOne(() => User, user => user.passwordResetTokens, { onDelete: 'CASCADE' })
   user: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

@@ -4,6 +4,7 @@ import * as nodemailer from 'nodemailer';
 @Injectable()
 export class AppMailer {
   private transporter;
+  mailerService: any;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -47,6 +48,15 @@ export class AppMailer {
         <p><b>Client Secret:</b> ${clientSecret}</p>
         <p><b>API Key:</b> ${apiKey}</p>
       `,
+    });
+  }
+
+  async sendVerificationEmail(email: string, token: string) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Verify Your Account',
+      template: './verify',
+      context: { token },
     });
   }
 }

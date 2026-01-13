@@ -12,11 +12,11 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(PasswordResetToken)
-    private readonly resetTokenRepo: Repository<PasswordResetToken>,
+    private readonly PasswordresetTokenRepo: Repository<PasswordResetToken>,
     @InjectRepository(EmailVerificationToken)
-    private readonly emailTokenRepo: Repository<EmailVerificationToken>,
+    private readonly EmailVerificationTokenRepo: Repository<EmailVerificationToken>,
     @InjectRepository(OtpCode)
-    private readonly otpRepo: Repository<OtpCode>,
+    private readonly otpCodeRepo: Repository<OtpCode>,
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -41,22 +41,22 @@ export class UsersService {
 
   // Password reset tokens
   async savePasswordResetToken(userId: string, token: string, expiresAt: Date) {
-    const resetToken = this.resetTokenRepo.create({ user: { id: userId } as User, token, expiresAt });
-    return this.resetTokenRepo.save(resetToken);
+    const resetToken = this.PasswordresetTokenRepo.create({ user: { id: userId } as User, token, expiresAt });
+    return this.PasswordresetTokenRepo.save(resetToken);
   }
 
   // Email verification tokens
   async saveEmailVerificationToken(userId: string, token: string, expiresAt: Date) {
-    const emailToken = this.emailTokenRepo.create({ user: { id: userId } as User, token, expiresAt });
-    return this.emailTokenRepo.save(emailToken);
+    const emailToken = this.EmailVerificationTokenRepo.create({ user: { id: userId } as User, token, expiresAt });
+    return this.EmailVerificationTokenRepo.save(emailToken);
   }
 
   async findEmailVerificationToken(userId: string, token: string) {
-    return this.emailTokenRepo.findOne({ where: { user: { id: userId }, token } });
+    return this.EmailVerificationTokenRepo.findOne({ where: { user: { id: userId }, token } });
   }
 
   async markEmailVerificationTokenUsed(id: string) {
-    await this.emailTokenRepo.update(id, { used: true });
+    await this.EmailVerificationTokenRepo.update(id, { used: true });
   }
 
   async markEmailVerified(userId: string) {
@@ -65,16 +65,16 @@ export class UsersService {
 
   // OTP handling
   async saveOtpToDb(email: string, code: string, expiresAt: Date): Promise<OtpCode> {
-    const otp = this.otpRepo.create({ email, code, expiresAt});
-    return this.otpRepo.save(otp);
+    const otp = this.otpCodeRepo.create({ email, code, expiresAt});
+    return this.otpCodeRepo.save(otp);
     }
 
   async findOtp(email: string, code: string): Promise<OtpCode | null> {
-    return this.otpRepo.findOne({ where: { email, code } });
+    return this.otpCodeRepo.findOne({ where: { email, code } });
   }
 
   async markOtpUsed(id: number): Promise<void> {
-    await this.otpRepo.update(id, { used: true });
+    await this.otpCodeRepo.update(id, { used: true });
   }
 
   async findAll({ page, limit }: { page: number; limit: number }) {
@@ -88,4 +88,13 @@ async remove(id: string) {
   await this.userRepo.delete(id);
   return { success: true };
 }
+
+async findAllPaginated(page: 1, limit: 10) {
+  return this.userRepo.findAndCount({
+    skip: (page - 1) * limit,
+    take: limit,
+    order: { createdAt: 'DESC' },
+  });
+}
+
 }

@@ -15,9 +15,9 @@ export class EmailVerificationToken {
   @Column({ default: false })
   used: boolean;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @ManyToOne(() => User, user => user.emailVerificationTokens, { onDelete: 'CASCADE' })
   user: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

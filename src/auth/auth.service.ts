@@ -10,16 +10,19 @@ import { AuditService } from './audit.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../auth/entities/client.entity';
+import { RevokedToken } from './entities/revoked-token.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly mailer: AppMailer,
+    private readonly Appmailer: AppMailer,
     private readonly auditService: AuditService,
     @InjectRepository(Client)
     private readonly clientRepo: Repository<Client>,
+    @InjectRepository(RevokedToken)
+    private readonly revokedTokenRepo: Repository<RevokedToken>,
   ) {}
 
   // ---------------- User Validation ----------------
@@ -60,7 +63,7 @@ export class AuthService {
   // ---------------- Admin Login ----------------
   async adminLogin(email: string, password: string) {
     const admin = await this.usersService.findByEmail(email);
-    if (!admin || admin.role !== 'ADMIN') throw new UnauthorizedException('Invalid credentials');
+    if (!admin || admin.role !== 'Admin') throw new UnauthorizedException('Invalid credentials');
     if (!admin.isVerified) throw new UnauthorizedException('Please verify your email before logging in');
 
     const passwordMatch = await bcrypt.compare(password, admin.password);
@@ -94,7 +97,7 @@ export class AuthService {
 
     const resetLink = `https://switchgate.com/reset?token=${token}`;
 
-    await this.mailer.sendWelcomeEmail(user.email, resetLink); // ✅ no user.name
+    await this.Appmailer.sendWelcomeEmail(user.email, resetLink); // ✅ no user.name
 
     await this.usersService.savePasswordResetToken(user.id, token, new Date(Date.now() + 15 * 60 * 1000));
 
@@ -124,7 +127,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await this.usersService.saveOtpToDb(email, otp, expiresAt);
-    await this.mailer.sendOtpEmail(email, otp);
+    await this.Appmailer.sendOtpEmail(email, otp);
 
     return { message: 'OTP sent to email' };
   }
@@ -158,7 +161,7 @@ export class AuthService {
       });
       await this.clientRepo.save(client);
 
-      await this.mailer.sendClientWelcomeEmail(
+      await this.Appmailer.sendClientWelcomeEmail(
         user.email,
         clientId,
         clientSecret,
@@ -178,7 +181,7 @@ export class AuthService {
       await this.usersService.saveEmailVerificationToken(user.id, verifyToken, new Date(Date.now() + 24 * 60 * 60 * 1000));
 
       const verificationLink = `https://switchgate.com/verify-email?token=${verifyToken}`;
-      await this.mailer.sendWelcomeEmail(user.email, verificationLink);
+      await this.Appmailer.sendWelcomeEmail(user.email, verificationLink);
 
       return { message: 'User registered successfully. Verification email sent.' };
     }
@@ -204,6 +207,12 @@ export class AuthService {
     } catch {
       throw new BadRequestException('Invalid or expired token');
     }
+  }
+
+  async revokeToken(refreshToken: string): Promise<{ message: string }> {
+    const revoked = this.revokedTokenRepo.create({ token: refreshToken });
+    await this.revokedTokenRepo.save(revoked);
+    return { message: 'Token revoked successfully' };
   }
 
   async saveAdminMfaSecret(userId: string, secret: string) {

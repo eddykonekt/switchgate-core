@@ -15,6 +15,10 @@ import { AuthAudit } from './auth/entities/auth-audit.entity';
 import { OtpCode } from './auth/entities/otp-code.entity';
 import { PasswordResetToken } from './auth/entities/password-reset-token.entity';
 import { AdminMfaSecret } from './auth/entities/admin-mfa-secret.entity';
+import { EmailVerificationToken } from './auth/entities/email-verification-token.entity';
+import { ClientsModule } from './auth/clients.module';
+import { RevokedToken } from './auth/entities/revoked-token.entity';
+import { UserSession } from './auth/entities/user-session.entity';
 
 @Module({
   imports: [
@@ -30,6 +34,8 @@ import { AdminMfaSecret } from './auth/entities/admin-mfa-secret.entity';
         },
       ],
     }),
+    UsersModule,
+    ClientsModule,
 
     TypeOrmModule.forRootAsync({
       useFactory: () => {
@@ -47,7 +53,7 @@ import { AdminMfaSecret } from './auth/entities/admin-mfa-secret.entity';
           password: process.env.DB_PASSWORD || 'test1234',
           database: process.env.DB_NAME || 'switchgate_test',
           ssl: process.env.DB_SSL === 'true',
-          entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit, OtpCode, PasswordResetToken, AdminMfaSecret],
+          entities: [User, RefreshToken, TokenBlacklist, Client, AuthAudit, OtpCode, PasswordResetToken, AdminMfaSecret, EmailVerificationToken, RevokedToken, UserSession],
           synchronize: true,
         };
       },

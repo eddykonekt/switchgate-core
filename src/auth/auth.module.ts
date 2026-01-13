@@ -23,11 +23,21 @@ import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { AdminMfaSecret } from './entities/admin-mfa-secret.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from 'src/users/entities/user.entity';
+import { AppMailer } from 'src/mailer/mailer.service';
+import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { RevokedToken } from './entities/revoked-token.entity';
+import { ConfigModule } from '@nestjs/config';
+import { UserSession } from './entities/user-session.entity';
+import { SessionService } from './session.service';
+import { APP_GUARD } from '@nestjs/core';
+import { ScopesGuard } from './guards/scopes.guard';
+import { CleanupService } from './cleanup.service';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
-    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken, Client]),
+    TypeOrmModule.forFeature([User, OtpCode, PasswordResetToken, AdminMfaSecret, RefreshToken, Client, EmailVerificationToken, RevokedToken, UserSession]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev_secret',
@@ -36,8 +46,8 @@ import { User } from 'src/users/entities/user.entity';
     MailerModule,
     RedisModule,
   ],
-  providers: [AuthService, JwtStrategy, TokenService, MFAService, AuditService, AccountService, ClientRegistryService, RefreshTokenRepository, AdminUsersService],
+  providers: [AuthService, JwtStrategy, TokenService, MFAService, AuditService, AccountService, ClientRegistryService, RefreshTokenRepository, AdminUsersService, AppMailer, SessionService, CleanupService, { provide: APP_GUARD, useClass: ScopesGuard }],
   controllers: [AuthController, AdminClientsController, AdminUsersController],
-  exports: [AuthService, TokenService, RefreshTokenRepository, ClientRegistryService],
+  exports: [AuthService, TokenService, RefreshTokenRepository, ClientRegistryService, SessionService],
 })
 export class AuthModule {}

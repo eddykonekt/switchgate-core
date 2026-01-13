@@ -15,12 +15,12 @@ export class RegisterDto {
   role: 'USER' | 'PARTNER' | 'ENTERPRISE' | 'GOVERNMENT';
 
   @ApiProperty({ example: '+2348012345678', required: false })
-  @IsOptional()
-  msisdn?: string;
+  @IsString()
+  msisdn: string;
 
   @ApiProperty({ example: '1234', required: false })
-  @IsOptional()
-  pin?: string;
+  @IsString()
+  pin: string;
 }
 
 export class VerifyEmailDto {

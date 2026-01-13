@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-export class RequestPasswordResetDto {
+export class VerifyOtpDto {
   @ApiProperty({ example: 'user@example.com' })
   email: string;
+
+  @ApiProperty({ example: '123456', description: 'OTP code' })
+  code: string;
 }

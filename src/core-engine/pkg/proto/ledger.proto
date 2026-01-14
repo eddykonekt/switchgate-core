@@ -1,0 +1,28 @@
+syntax = "proto3";
+package switchgate.ledger;
+option go_package = "github.com/switchgate/switchgate-core/src/core-engine/pkg/proto/gen/ledger;ledger";
+
+message LedgerEntry {
+  string entryId = 1;
+  string transactionId = 2;
+  string type = 3; // DEBIT|CREDIT|RESERVATION|REVERSAL
+  string account = 4;
+  string assetType = 5;
+  string amount = 6;
+  string timestamp = 7;
+  string hash = 8;
+  string prevHash = 9;
+}
+
+message GetTransactionEntriesRequest {
+  string transactionId = 1;
+}
+
+message GetTransactionEntriesResponse {
+  repeated LedgerEntry entries = 1;
+  string status = 2;
+}
+
+service LedgerService {
+  rpc GetTransactionEntries(GetTransactionEntriesRequest) returns (GetTransactionEntriesResponse);
+}

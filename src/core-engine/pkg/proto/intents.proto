@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package switchgate.intents;
+
+// Generated Go package path
+option go_package = "github.com/switchgate-core/core-engine/pkg/proto/gen/intents;intents";
+
+// Party represents a customer or endpoint in a transfer
+message Party {
+  string msisdn = 1;
+  string telco = 2;
+}
+
+// FeeQuote represents calculated fees for a transfer
+message FeeQuote {
+  string feePercent = 1;
+  string feeAmount = 2;
+  string netAmount = 3;
+}
+
+// -------------------- Requests & Responses --------------------
+
+// CreateIntent
+message CreateIntentRequest {
+  Party source = 1;
+  Party destination = 2;
+  string assetType = 3;
+  string amount = 4; // decimal as string
+  string bundleId = 5; // optional
+  string idempotencyKey = 6;
+  string partnerId = 7;
+}
+
+message CreateIntentResponse {
+  string intentId = 1;
+  string status = 2; // PENDING_PIN
+  FeeQuote feeQuote = 3;
+  string expiresAt = 4; // ISO8601 timestamp
+}
+
+// SubmitPin
+message SubmitPinRequest {
+  string intentId = 1;
+  string telcoPin = 2;
+}
+
+message SubmitPinResponse {
+  string status = 1; // OTP_SENT
+  string otpChannel = 2;
+  string otpExpiresAt = 3;
+}
+
+// VerifyOtp
+message VerifyOtpRequest {
+  string intentId = 1;
+  string otpCode = 2;
+}
+
+message VerifyOtpResponse {
+  string status = 1; // DEBIT_CONFIRMED
+  string debitReference = 2;
+  string reservedAmount = 3;
+}
+
+// Finalize
+message FinalizeRequest {
+  string intentId = 1;
+}
+
+message FinalizeResponse {
+  string status = 1; // COMPLETED
+  string transactionId = 2;
+  string receiptJson = 3;
+  repeated string ledgerRefs = 4;
+}
+
+// -------------------- Service --------------------
+
+service IntentService {
+  rpc CreateIntent(CreateIntentRequest) returns (CreateIntentResponse);
+  rpc SubmitPin(SubmitPinRequest) returns (SubmitPinResponse);
+  rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
+  rpc Finalize(FinalizeRequest) returns (FinalizeResponse);
+}

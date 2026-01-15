@@ -1,8 +1,8 @@
-# **README.md — Pan-African Switching Engine**
+# **SWitchGate - Pan-African Prepaid Switching Engine**
 
 ## **Overview**
 
-The **Pan-African Multi-Rails Switching Engine** is a high-performance distributed platform built in **Go**, designed to abstract value units (VU), manage multi-provider routing, orchestrate idempotent transactions, and maintain a real-time double-entry ledger across multiple African countries.
+The **Pan-African Multi-Rails Switching Engine** is a high-performance distributed platform built in **Go, Node/NestJs, Python**, designed to abstract value units (VU), manage multi-provider routing, orchestrate idempotent transactions, and maintain a real-time double-entry ledger across multiple African countries.
 
 The switching engine connects **telecom operators**, **utility providers**, **banks**, **wallets**, **payment aggregators**, and **local settlement partners** into a unified programmable interface.
 
@@ -165,10 +165,10 @@ Convenience Fee: 10 – 50 Naira / 1 – 5 GHS / 10 KES (country dependent)
 
 
 
-# **Repository File Structure (Advanced)**
+# **Repository File Structure**
 
 
-/switching-engine
+/core-engine
 │
 ├── cmd/
 │   ├── api/
@@ -297,7 +297,7 @@ PROVIDER_VODAFONE_KEY=
 
 ```
 git clone <repo>
-cd switching-engine
+cd core-engine
 go mod tidy
 ```
 

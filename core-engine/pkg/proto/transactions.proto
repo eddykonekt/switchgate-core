@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package switchgate.transactions;
+
+option go_package = "github.com/eddykonekt/switchgate-core/proto/gen/transactions;transactions";
+
+message ReverseRequest {
+  string transactionId = 1;
+  string reasonCode = 2;
+  string initiator = 3;
+}
+
+message ReverseResponse {
+  string status = 1;
+  string reversalId = 2;
+}
+
+service TransactionService {
+  rpc Reverse(ReverseRequest) returns (ReverseResponse);
+}

@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package switchgate.intents;
+
+option go_package = "github.com/eddykonekt/switchgate-core/proto/gen/intents;intents";
+
+message Party {
+  string msisdn = 1;
+  string telco = 2;
+}
+
+message FeeQuote {
+  string feePercent = 1;
+  string feeAmount = 2;
+  string netAmount = 3;
+}
+
+message CreateIntentRequest {
+  Party source = 1;
+  Party destination = 2;
+  string assetType = 3;
+  string amount = 4;
+  string bundleId = 5;
+  string idempotencyKey = 6;
+  string partnerId = 7;
+}
+
+message CreateIntentResponse {
+  string intentId = 1;
+  string status = 2;
+  FeeQuote feeQuote = 3;
+  string expiresAt = 4;
+}
+
+message SubmitPinRequest {
+  string intentId = 1;
+  string telcoPin = 2;
+}
+
+message SubmitPinResponse {
+  string status = 1;
+  string otpChannel = 2;
+  string otpExpiresAt = 3;
+}
+
+message VerifyOtpRequest {
+  string intentId = 1;
+  string otpCode = 2;
+}
+
+message VerifyOtpResponse {
+  string status = 1;
+  string debitReference = 2;
+  string reservedAmount = 3;
+}
+
+message FinalizeRequest {
+  string intentId = 1;
+}
+
+message FinalizeResponse {
+  string status = 1;
+  string transactionId = 2;
+  string receiptJson = 3;
+  repeated string ledgerRefs = 4;
+}
+
+service IntentService {
+  rpc CreateIntent(CreateIntentRequest) returns (CreateIntentResponse);
+  rpc SubmitPin(SubmitPinRequest) returns (SubmitPinResponse);
+  rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
+  rpc Finalize(FinalizeRequest) returns (FinalizeResponse);
+}

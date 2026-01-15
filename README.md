@@ -1,98 +1,349 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# **README.md — Pan-African Switching Engine**
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## **Overview**
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The **Pan-African Multi-Rails Switching Engine** is a high-performance distributed platform built in **Go**, designed to abstract value units (VU), manage multi-provider routing, orchestrate idempotent transactions, and maintain a real-time double-entry ledger across multiple African countries.
 
-## Description
+The switching engine connects **telecom operators**, **utility providers**, **banks**, **wallets**, **payment aggregators**, and **local settlement partners** into a unified programmable interface.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The system enables:
 
-## Project setup
+* **Value Abstraction (VU Layer)** to normalize airtime, data bundles, utility tokens, power units (kWh), TV subscriptions, meter top-ups, etc.
+* **Provider Routing Engine** for intelligent routing based on success rate, cost, SLA, or geographic limitations.
+* **Idempotent Execution** (no duplicate charges or double provisioning).
+* **Double-Entry Ledgering** for every financial movement.
+* **Reservation + Settlement Model** where switching events go through hold → commit → release → reverse flows.
+* **Event Streaming (Kafka)** for audit, notifications, external integrations.
+* **Multi-Country Support** with strict money-laundering controls limiting switching only within the same country.
+* **Revenue Logic** supporting our 2–5% fee model charged to providers and optionally to users.
 
-```bash
-$ npm install
+
+## **Core Principles**
+
+### **1. Pan-African but Country-Bound Switching (AML Control)**
+
+* Nigerian users switch only Nigerian assets.
+* Ghanaian users switch only Ghana assets.
+* Kenyan users switch only Kenya assets.
+* No cross-border switching of prepaid values (e.g., Nigerian airtime → Ghanaian airtime is **not allowed**).
+* Cross-border activity (future phase) will only occur via **regulated FX partners**.
+
+### **2. Provider-Charged Model**
+
+We earn **2–5%** of every successful transaction that flows through our rails:
+
+* Providers pay per request processed.
+* Users are charged **only** when they directly use our app or web platform.
+* Partner-integrated systems (via API) never show charges to end-users; we invoice partners monthly.
+
+### **3. Fail-Safe Execution**
+
+Each transaction has:
+
+* **Trace ID**
+* **Idempotency Key**
+* **Two-phase commit transaction flow**
+* **Guarantees exactly-once execution**
+
+
+
+# **Architecture**
+
+```
+                    ┌──────────────────────────┐
+                    │      Mobile / Web App    │
+                    └─────────────┬────────────┘
+                                  │ REST / gRPC
+┌─────────────────────────────────▼────────────────────────────────┐
+│                         API Gateway                              │
+└─────────────────────────┬─────────────────────────┬──────────────┘
+                          │                         │
+                     Auth Service               Partner API
+                          │                         │
+                          ▼                         ▼
+┌───────────────────────────────────────────────────────────────────┐
+│                        Switching Engine (Go)                      │
+│                                                                   │
+│  ┌─────────────┐   ┌──────────────────┐   ┌───────────────────┐  │
+│  │ VU Layer     │   │ Routing Engine   │   │ Transaction Core   │ │
+│  │ Normalization│   │ Provider Scoring │   │ Ledger + Reserve   │ │
+│  └─────────────┘   └──────────────────┘   └───────────────────┘  │
+│                                                                   │
+└──────────────────────────┬────────────────────────────────────────┘
+                           │
+                           ▼
+                ┌────────────────────────────┐
+                │  Provider Connectors       │
+                │  (Telcos, Utility APIs)    │
+                └────────────────────────────┘
+                           │
+                           ▼
+                       Kafka Bus
+                           │
+                           ▼
+         ┌────────────────────────────────────────┐
+         │ Settlement, Reconciliation, Reporting   │
+         └────────────────────────────────────────┘
+
+
+
+
+# **Key Components**
+
+### **1. VU (Value Unit) Abstraction Layer**
+
+Normalizes prepaid values to a universal structure:
+
+
+{
+  "vuCode": "MTN_NG_DATA_2GB",
+  "country": "NG",
+  "provider": "MTN",
+  "type": "DATA",
+  "denomination": 2000,
+  "currency": "NGN",
+  "metadata": {...}
+}
+
+
+### **2. Routing Engine**
+
+Smart routing based on:
+
+* Cost
+* Success rate
+* Latency
+* SLA
+* Country restrictions
+* Provider health score
+
+### **3. Transaction Execution**
+
+Transaction states:
+
+| State     | Meaning                         |
+| --------- | ------------------------------- |
+| RESERVED  | Amount held but not yet settled |
+| COMMITTED | Provider confirmed success      |
+| RELEASED  | Funds moved to provider         |
+| REVERSED  | Rolled back                     |
+
+### **4. Double-Entry Ledger**
+
+
+Debit: User Wallet
+Credit: Provider Settlement Wallet
+
+
+Guarantees full auditability.
+
+
+
+# **Fee Structure**
+
+### **Provider-Pay Model**
+
+We charge providers **2–5%** per transaction:
+
+| Provider Type     | Typical Charge |
+| ----------------- | -------------- |
+| Telcos            | 2–3%           |
+| Utility Companies | 3–4%           |
+| Aggregators       | 4–5%           |
+
+Partners receive invoicing monthly or real-time auto-billing.
+
+### **End-User Charges**
+
+Users only pay when using our native app/web:
+
+
+Base Fee: 1% – 2%
++
+Convenience Fee: 10 – 50 Naira / 1 – 5 GHS / 10 KES (country dependent)
+
+
+
+
+# **Repository File Structure (Advanced)**
+
+
+/switching-engine
+│
+├── cmd/
+│   ├── api/
+│   │   └── main.go                 # REST/gRPC server bootstrap
+│   └── worker/
+│       └── main.go                 # Kafka consumers, background jobs
+│
+├── internal/
+│   ├── config/                     # Environment + config loader
+│   ├── auth/                       # JWT, API keys, HMAC validation
+│   ├── vu/                         # Value abstraction engine
+│   ├── routing/                    # Provider routing + scoring
+│   ├── transaction/                # Reservation → Commit → Reverse logic
+│   │   ├── service.go
+│   │   ├── idempotency.go
+│   │   └── validator.go
+│   ├── ledger/                     # Double-entry accounting engine
+│   ├── provider/                   # Provider connectors + SDKs
+│   │   ├── mtn/
+│   │   ├── airtel/
+│   │   ├── glo/
+│   │   ├── vodafone/
+│   │   ├── kenya-power/
+│   │   └── etc...
+│   ├── fees/                       # Provider and user fee computation
+│   ├── country/                    # AML rules, country restrictions
+│   ├── settlement/                 # Automated settlement jobs
+│   └── notifications/              # Webhooks, email, SMS
+│
+├── pkg/
+│   ├── utils/                      # Helper functions
+│   ├── logger/                     # Centralized logging
+│   ├── middleware/                 # Rate limits, tracing, auth
+│   └── events/                     # Kafka producers + consumers
+│
+├── api/
+│   ├── proto/                      # gRPC service definitions
+│   └── openapi/                    # REST API documentation
+│
+├── deployments/
+│   ├── docker/                     # Dockerfiles
+│   ├── k8s/                        # Kubernetes manifests
+│   └── terraform/                  # Infrastructure as Code
+│
+├── scripts/
+│   ├── migrate.sh                  # DB migrations
+│   ├── seed.sh                     # Test data
+│   └── benchmark.sh                # Load testing
+│
+├── migrations/                     # Schema migrations (SQL)
+│
+├── Makefile                        # Build/test shortcuts
+├── docker-compose.yaml
+├── go.mod
+└── README.md
+
+
+
+
+# **Environment Variables (.env)**
+
+
+APP_ENV=production
+PORT=8080
+
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASS=
+DB_NAME=
+
+KAFKA_BROKER=
+JWT_SECRET=
+HASH_SALT=
+
+PROVIDER_MTN_KEY=
+PROVIDER_AIRTEL_KEY=
+PROVIDER_VODAFONE_KEY=
 ```
 
-## Compile and run the project
 
-```bash
-# development
-$ npm run start
 
-# watch mode
-$ npm run start:dev
+# **REST API Workflow Example**
 
-# production mode
-$ npm run start:prod
+### **POST /v1/transactions/switch**
+
+```json
+{
+  "country": "NG",
+  "userId": "USER-1212",
+  "vuCode": "MTN_AIRTIME_1000",
+  "amount": 1000,
+  "channel": "PARTNER_API",
+  "idempotencyKey": "abc123"
+}
 ```
 
-## Run tests
+### **Response**
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```json
+{
+  "status": "RESERVED",
+  "transactionId": "TX-8844992",
+  "fee": 25,
+  "providerChargeApplied": true
+}
 ```
 
-## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# **Kafka Event Streams**
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+| Topic               | Purpose               |
+| ------------------- | --------------------- |
+| switching.reserved  | Holds event           |
+| switching.committed | Provider confirmed    |
+| switching.reversed  | Error rollback        |
+| settlement.process  | Daily settlement      |
+| ledger.entry        | All double-entry logs |
+
+---
+
+# **Developer Onboarding**
+
+### **1. Install Dependencies**
+
+```
+git clone <repo>
+cd switching-engine
+go mod tidy
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### **2. Setup Database**
 
-## Resources
+```
+docker-compose up -d postgres
+./scripts/migrate.sh
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### **3. Run API Service**
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```
+go run cmd/api/main.go
+```
 
-## Support
+### **4. Run Worker Service**
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```
+go run cmd/worker/main.go
+```
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# **Code Quality & Standards**
 
-## License
+We enforce:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+* GolangCI-Lint
+* Conventional commits
+* 80–90% test coverage target
+* No business logic in handlers
+* Hexagonal architecture
+* Trace IDs for every request
+
+---
+
+# **Compliance Considerations**
+
+To operate across Africa:
+
+| Area        | Requirement                            |
+| ----------- | -------------------------------------- |
+| AML         | Country-bounded switching enforcement  |
+| KYC         | Partner validation before API issuance |
+| Logging     | 7-year retention for regulated data    |
+| Encryption  | AES-256 at rest, TLS 1.3 in transit    |
+| Audit       | Provider-by-provider traceability      |
+| Rate Limits | Per partner & global throttle          |

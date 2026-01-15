@@ -1,4 +1,4 @@
-# **SWitchGate - Pan-African Prepaid Switching Engine**
+# **SwitchGate - Pan-African Prepaid Switching Engine**
 
 ## **Overview**
 

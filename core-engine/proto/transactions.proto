@@ -1,20 +1,33 @@
 syntax = "proto3";
 
-package switchgate.transactions;
+package transactions;
 
-option go_package = "github.com/eddykonekt/switchgate-core/proto/gen/transactions;transactions";
-
-message ReverseRequest {
-  string transactionId = 1;
-  string reasonCode = 2;
-  string initiator = 3;
-}
-
-message ReverseResponse {
-  string status = 1;
-  string reversalId = 2;
-}
+// 👇 Correct Go import path for generated code
+option go_package = "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/transactions;transactionspb";
 
 service TransactionService {
-  rpc Reverse(ReverseRequest) returns (ReverseResponse);
+  rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+}
+
+message CreateTransactionRequest {
+  string intentId = 1;
+  string amount = 2;
+  string assetType = 3;
+}
+
+message CreateTransactionResponse {
+  string transactionId = 1;
+  string status = 2;
+}
+
+message GetTransactionRequest {
+  string transactionId = 1;
+}
+
+message GetTransactionResponse {
+  string transactionId = 1;
+  string status = 2;
+  string amount = 3;
+  string assetType = 4;
 }

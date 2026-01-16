@@ -9,6 +9,8 @@ import (
 	"github.com/eddykonekt/switchgate-core/core-engine/internal/adapters"
 	"github.com/eddykonekt/switchgate-core/core-engine/internal/intents"
 	intentspb "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/intents"
+	import transactionspb "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/transactions"
+	import ledgerpb "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/ledger"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"

@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package intents;
 
-option go_package = "github.com/eddykonekt/switchgate-core/proto/gen/intents;intentspb";
-
+option go_package = "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/intents;intentspb";
 service IntentService {
   rpc CreateIntent(CreateIntentRequest) returns (CreateIntentResponse);
 }

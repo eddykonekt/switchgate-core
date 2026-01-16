@@ -8,7 +8,7 @@ import (
 	"github.com/eddykonekt/switchgate-core/core-engine/config"
 	"github.com/eddykonekt/switchgate-core/core-engine/internal/adapters"
 	"github.com/eddykonekt/switchgate-core/core-engine/internal/intents"
-	intentspb "github.com/eddykonekt/switchgate-core/proto/gen/intents"
+	intentspb "github.com/eddykonekt/switchgate-core/core-engine/proto/gen/intents"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"

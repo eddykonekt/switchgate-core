@@ -1,8 +1,5 @@
-APP := switchgate
+APP := core-engine
 PKG := ./...
-PROTO_DIR := proto
-GEN_DIR := proto/gen
-
 GOFLAGS := -trimpath
 LDFLAGS := -s -w
 
@@ -11,10 +8,10 @@ LDFLAGS := -s -w
 all: build
 
 build:
-	GOFLAGS=$(GOFLAGS) CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o bin/$(APP) ./cmd/switchgate
+	GOFLAGS=$(GOFLAGS) CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o bin/$(APP) ./cmd/core-engine
 
 run:
-	./bin/$(APP)
+	go run ./bin/$(APP)
 
 test:
 	go test $(PKG) -cover -race
@@ -24,13 +21,13 @@ lint:
 	go vet $(PKG)
 
 proto:
-	protoc -I $(PROTO_DIR) \
-		--go_out=$(GEN_DIR) --go_opt=paths=source_relative \
-		--go-grpc_out=$(GEN_DIR) --go-grpc_opt=paths=source_relative \
-		$(PROTO_DIR)/*.proto
+	protoc -I proto \
+	--go_out=pkg/proto/gen --go_opt=paths=source_relative \
+	--go-grpc_out=pkg/proto/gen --go-grpc_opt=paths=source_relative \
+	proto/*.proto
 
 migrate-up:
-	go run ./cmd/migrate up
+	./scripts/migrate.sh up
 
 migrate-down:
-	go run ./cmd/migrate down
+	./scripts/migrate.sh down

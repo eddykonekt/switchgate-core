@@ -1,22 +1,10 @@
 package config
 
-import (
-	"os"
-)
+import "os"
 
-type Config struct {
-	AppEnv         string
-	Port           string
-	PostgresURL    string
-	RedisURL       string
-	KafkaBroker    string
-	JWTSecret      string
-	HashSalt       string
-	IdempotencyTTL int
-}
-
-func Load() (*Config, error) {
-	return &Config{
+// Load reads environment variables into Config.
+func Load() (*config, error) {
+	return &config{
 		AppEnv:         getEnv("APP_ENV", "production"),
 		Port:           getEnv("PORT", "8080"),
 		PostgresURL:    getEnv("POSTGRES_URL", ""),
@@ -24,13 +12,13 @@ func Load() (*Config, error) {
 		KafkaBroker:    getEnv("KAFKA_BROKER", ""),
 		JWTSecret:      getEnv("JWT_SECRET", ""),
 		HashSalt:       getEnv("HASH_SALT", ""),
-		IdempotencyTTL: 300, // seconds
+		IdempotencyTTL: 300,
 	}, nil
 }
 
 func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+	if val := os.Getenv(key); val != "" {
+		return val
 	}
 	return fallback
 }
